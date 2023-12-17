@@ -163,10 +163,10 @@ class Main(newSchedStack):
                                 default='null')
 
         # Add substack
-        self.stack.add_substack('config0-hub:::new_ec2_ssh_key')
-        self.stack.add_substack('config0-hub:::ec2_ubuntu')
-        self.stack.add_substack('config0-hub:::kafka_cluster_on_ubuntu')
-        self.stack.add_substack('config0-hub:::delete_resource')
+        self.stack.add_substack('config0-publish:::new_ec2_ssh_key')
+        self.stack.add_substack('config0-publish:::ec2_ubuntu')
+        self.stack.add_substack('config0-publish:::kafka_cluster_on_ubuntu')
+        self.stack.add_substack('config0-publish:::delete_resource')
 
         self.stack.init_substacks()
 

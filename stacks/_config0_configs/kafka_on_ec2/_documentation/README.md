@@ -110,7 +110,7 @@ selectors:
        resource_type: security_group
 infrastructure:
    ssh_upload:
-       stack_name: config0-hub:::ec2_ssh_upload
+       stack_name: config0-publish:::ec2_ssh_upload
        arguments:
           name: kafka-cluster-ssh-dev
           clobber: True
@@ -118,7 +118,7 @@ infrastructure:
            - reference: aws
              orchestration: true
    kafka:
-       stack_name: config0-hub:::kafka_on_ec2
+       stack_name: config0-publish:::kafka_on_ec2
        dependencies:
           - infrastructure::ssh_upload
        arguments:
