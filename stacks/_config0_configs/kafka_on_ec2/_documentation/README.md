@@ -1,12 +1,14 @@
 **Description**
 
-  - Creates a Kafka cluster on AWS with Ec2 VMs.
-  - Note: option to use spot instances. may fail (unlikely) if the price is too low or if spot capacity is interupted.
+  - This stack creates a Kafka cluster on AWS using EC2 instances.
+
+**Gotchas**
+  - Please note that there is an option to utilize spot instances, which can be more cost-effective. However, it is important to be aware that there is a slight possibility of failure if the spot price is exceptionally low or if there is an interruption in spot capacity.
 
 **Infrastructure**
 
-  - if vpc_id, security group ids are not explicity provided, users can use "selectors". 
-    - this requires the VPC information be found in the Config0 resources database.
+  - If vpc_id and security group IDs are not explicitly provided, users have the option to use "selectors".
+    - NOTE: Using selectors depends on the VPC information being available in the Config0 resources database.
 
 **Required**
 
@@ -110,7 +112,7 @@ selectors:
        resource_type: security_group
 infrastructure:
    ssh_upload:
-       stack_name: config0-publish:::ec2_ssh_upload
+       stack_name: config0-hub:::ec2_ssh_upload
        arguments:
           name: kafka-cluster-ssh-dev
           clobber: True
@@ -118,7 +120,7 @@ infrastructure:
            - reference: aws
              orchestration: true
    kafka:
-       stack_name: config0-publish:::kafka_on_ec2
+       stack_name: config0-hub:::kafka_on_ec2
        dependencies:
           - infrastructure::ssh_upload
        arguments:

@@ -36,9 +36,9 @@ def _vm_create(server_type, num, stack):
 
         human_description = "Creating hostname {} on ec2".format(hostname)
 
-        inputargs = {"arguments": arguments}
-        inputargs["automation_phase"] = "infrastructure"
-        inputargs["human_description"] = human_description
+        inputargs = {"arguments": arguments,
+                     "automation_phase": "infrastructure",
+                     "human_description": human_description}
 
         stack.ec2_ubuntu.insert(display=True, 
                                 **inputargs)
@@ -163,10 +163,10 @@ class Main(newSchedStack):
                                 default='null')
 
         # Add substack
-        self.stack.add_substack('config0-publish:::new_ec2_ssh_key')
-        self.stack.add_substack('config0-publish:::ec2_ubuntu')
-        self.stack.add_substack('config0-publish:::kafka_cluster_on_ubuntu')
-        self.stack.add_substack('config0-publish:::delete_resource')
+        self.stack.add_substack("config0-hub:::new_ec2_ssh_key")
+        self.stack.add_substack("config0-hub:::ec2_ubuntu")
+        self.stack.add_substack("config0-hub:::kafka_cluster_on_ubuntu")
+        self.stack.add_substack("config0-hub:::delete_resource")
 
         self.stack.init_substacks()
 
@@ -176,14 +176,14 @@ class Main(newSchedStack):
 
         self._set_ssh_key_name()
 
-        arguments = { "key_name": self.stack.ssh_key_name, 
+        arguments = {"key_name": self.stack.ssh_key_name,
                       "clobber": True,
-                      "aws_default_region": self.stack.aws_default_region }
+                      "aws_default_region": self.stack.aws_default_region}
 
-        inputargs = {"arguments": arguments}
-        inputargs["automation_phase"] = "infrastructure"
-        inputargs["human_description"] = 'Create and upload ssh key name {}'.format(
-            self.stack.ssh_key_name)
+        human_description= "Create and upload ssh key name {}".format(stack.ssh_key_name)
+        inputargs = {"arguments": arguments,
+                     "automation_phase": "infrastructure",
+                     "human_description": human_description}
 
         return self.stack.new_ec2_ssh_key.insert(display=True,
                                                  **inputargs)
@@ -240,19 +240,15 @@ class Main(newSchedStack):
             if self.stack.spot_max_price:
                 arguments["spot_max_price"] = self.stack.spot_max_price
 
-        human_description = "Creating bastion config hostname {} on ec2".format(
-            self.stack.bastion_hostname)
-
-        inputargs = {"arguments": arguments }
-
-        # testtest777
         try:
             self.stack.logger.json(arguments)
         except:
             self.stack.logger.debug(arguments)
 
-        inputargs["automation_phase"] = "infrastructure"
-        inputargs["human_description"] = human_description
+        human_description = "Creating bastion config hostname {} on ec2".format(self.stack.bastion_hostname)
+        inputargs = {"arguments": arguments,
+                     "automation_phase": "infrastructure",
+                     "human_description": human_description}
 
         return self.stack.ec2_ubuntu.insert(display=True,
                                             **inputargs)
@@ -305,9 +301,9 @@ class Main(newSchedStack):
 
         self.stack.unset_parallel()
 
-        # hello
         arguments = self.stack.get_tagged_vars(tag="kafka",
                                                output="dict")
+
         arguments["zookeeper_hosts"] = zookeeper_hosts
         arguments["broker_hosts"] = broker_hosts
         arguments["schema_registry_hosts"] = schema_registry_hosts
@@ -319,10 +315,11 @@ class Main(newSchedStack):
         if self.stack.publish_to_saas:
             arguments["publish_to_saas"] = True
 
-        inputargs = {"arguments": arguments}
-        inputargs["automation_phase"] = "infrastructure"
-        inputargs["human_description"] = "Create Kafka Cluster {}".format(
-            self.stack.kafka_cluster)
+        human_description= "Create Kafka Cluster {}".format(stack.kafka_cluster)
+
+        inputargs = {"arguments": arguments,
+                     "automation_phase": "infrastructure",
+                     "human_description": human_description}
 
         return self.stack.kafka_cluster_on_ubuntu.insert(display=True,
                                                          **inputargs)
@@ -334,18 +331,16 @@ class Main(newSchedStack):
         self._set_hostname_base()
         self._set_bastion_hostname()
 
-        arguments = {"must_exists": True}
-        arguments["hostname"] = self.stack.bastion_hostname
-        arguments["resource_type"] = "server"
+        arguments = {"must_exists": True,
+                     "hostname": self.stack.bastion_hostname,
+                     "resource_type": "server"}
 
         if self.stack.bastion_destroy:
 
-            human_description = "Destroying bastion config hostname {} on ec2".format(
-                self.stack.bastion_hostname)
-
-            inputargs = {"arguments": arguments}
-            inputargs["automation_phase"] = "infrastructure"
-            inputargs["human_description"] = human_description
+            human_description = "Destroying bastion config hostname {} on ec2".format(self.stack.bastion_hostname)
+            inputargs = {"arguments": arguments,
+                         "automation_phase": "infrastructure",
+                         "human_description": human_description}
 
             return self.stack.delete_resource.insert(display=True,
                                                      **inputargs)
