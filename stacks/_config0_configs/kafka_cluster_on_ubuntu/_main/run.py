@@ -68,16 +68,16 @@ def run(stackargs):
                              default="elasticdev/ansible-run-env")
 
     # Add host group
-    stack.add_hostgroups("config0-hub:::ubuntu::18.04-docker",
+    stack.add_hostgroups("config0-publish:::ubuntu::18.04-docker",
                          "install_docker")
 
-    stack.add_hostgroups("config0-hub:::ansible::ubuntu-18.04",
+    stack.add_hostgroups("config0-publish:::ansible::ubuntu-18.04",
                          "install_python")
 
-    stack.add_hostgroups("config0-hub:::kafka::ubuntu_vendor_setup",
+    stack.add_hostgroups("config0-publish:::kafka::ubuntu_vendor_setup",
                          "ubuntu_vendor_setup")
 
-    stack.add_hostgroups("config0-hub:::kafka::ubuntu_vendor_init_cluster",
+    stack.add_hostgroups("config0-publish:::kafka::ubuntu_vendor_init_cluster",
                          "ubuntu_vendor_init_cluster")
 
     # Initialize 
