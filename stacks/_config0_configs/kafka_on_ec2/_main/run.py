@@ -180,7 +180,7 @@ class Main(newSchedStack):
                       "clobber": True,
                       "aws_default_region": self.stack.aws_default_region}
 
-        human_description= "Create and upload ssh key name {}".format(stack.ssh_key_name)
+        human_description= "Create and upload ssh key name {}".format(self.stack.ssh_key_name)
         inputargs = {"arguments": arguments,
                      "automation_phase": "infrastructure",
                      "human_description": human_description}
@@ -315,7 +315,7 @@ class Main(newSchedStack):
         if self.stack.publish_to_saas:
             arguments["publish_to_saas"] = True
 
-        human_description= "Create Kafka Cluster {}".format(stack.kafka_cluster)
+        human_description= "Create Kafka Cluster {}".format(self.stack.kafka_cluster)
 
         inputargs = {"arguments": arguments,
                      "automation_phase": "infrastructure",
