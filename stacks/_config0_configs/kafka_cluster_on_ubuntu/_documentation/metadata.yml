@@ -1,0 +1,12 @@
+desc: Creates a Kafka through a basion host.
+release: 0.0.1
+categories: 
+   - kafka
+   - ansible
+   - message_queue
+tags:
+   - ansible
+   - kafka
+   - vms
+   - cloud
+   - public_cloud
