@@ -60,10 +60,10 @@ def run(stackargs):
                              default="config0/ansible-run-env")
 
     # add host group
-    stack.add_hostgroups("config0-publish:::ubuntu::18.04-docker",
+    stack.add_hostgroups("config0-publish:::ubuntu::docker",
                          "install_docker")
 
-    stack.add_hostgroups("config0-publish:::ansible::ubuntu-18.04",
+    stack.add_hostgroups("config0-publish:::ansible::ubuntu",
                          "install_python")
 
     stack.add_hostgroups("config0-publish:::kafka::ubuntu_vendor_setup",

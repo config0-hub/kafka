@@ -2,9 +2,6 @@
 
   - This stack creates a Kafka cluster on AWS using EC2 instances.
 
-**Gotchas**
-  - Please note that there is an option to utilize spot instances, which can be more cost-effective. However, it is important to be aware that there is a slight possibility of failure if the spot price is exceptionally low or if there is an interruption in spot capacity.
-
 **Infrastructure**
 
   - If vpc_id and security group IDs are not explicitly provided, users have the option to use "selectors".
@@ -32,7 +29,6 @@
 
 | argument           | description                            | var type |  default      |
 | ------------- | -------------------------------------- | -------- | ------------ |
-| spot   | the option to use spot intances. (buyer be aware)    | boolean   | None        |
 | ami   | the ami image used for kafka instances      | string   | None        |
 | ami_filter   | the ami filter used to search for an image as a base for kafka instances      | string   | None        |
 | ami_owner   | the ami owner used to search for an image as a base for kafka instances      | string   | None        |

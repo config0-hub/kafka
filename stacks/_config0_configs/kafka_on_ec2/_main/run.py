@@ -11,14 +11,6 @@ def _vm_create(server_type, num, stack):
         arguments["ami_filter"] = stack.ami_filter
         arguments["ami_owner"] = stack.ami_owner
 
-    # spot request
-    if stack.spot:
-        arguments["spot"] = True
-        arguments["spot_type"] = stack.spot_type
-
-        if stack.spot_max_price:
-            arguments["spot_max_price"] = stack.spot_max_price
-
     arguments["size"] = stack.instance_type
 
     hosts = []
@@ -92,16 +84,6 @@ class Main(newSchedStack):
 
         self.parse.add_optional(key="ami_owner",
                                 default="null")
-
-        # spot request
-        self.parse.add_optional(key="spot",
-                                default="null")
-
-        self.parse.add_optional(key="spot_max_price",
-                                default="null")
-
-        self.parse.add_optional(key="spot_type",
-                                default="persistent")
 
         self.parse.add_optional(key="bastion_destroy",
                                 default="null")
@@ -228,14 +210,6 @@ class Main(newSchedStack):
         elif self.stack.bastion_ami_filter and self.stack.bastion_ami_owner:
             arguments["ami_filter"] = self.stack.bastion_ami_filter
             arguments["ami_owner"] = self.stack.bastion_ami_owner
-
-        # spot request
-        if self.stack.spot:
-            arguments["spot"] = True
-            arguments["spot_type"] = self.stack.spot_type
-
-            if self.stack.spot_max_price:
-                arguments["spot_max_price"] = self.stack.spot_max_price
 
         try:
             self.stack.logger.json(arguments)
