@@ -9,12 +9,12 @@ This stack creates a complete Kafka cluster on AWS EC2 instances, including ZooK
 
 | Name | Description | Default |
 |------|-------------|---------|
-| kafka_cluster | Kafka cluster name | |
-| bastion_sg_id | Bastion host security group | |
-| bastion_subnet_ids | Subnets for bastion hosts | |
-| sg_id | Security group ID | |
-| vpc_id | VPC network identifier | |
-| subnet_ids | Subnet ID list | |
+| kafka_cluster | Kafka cluster name | &nbsp; |
+| bastion_sg_id | Bastion host security group | &nbsp; |
+| bastion_subnet_ids | Subnets for bastion hosts | &nbsp; |
+| sg_id | Security group ID | &nbsp; |
+| vpc_id | VPC network identifier | &nbsp; |
+| subnet_ids | Subnet ID list | &nbsp; |
 
 ### Optional Variables
 
@@ -30,7 +30,7 @@ This stack creates a complete Kafka cluster on AWS EC2 instances, including ZooK
 | ami | AMI ID | null |
 | ami_filter | AMI filter criteria | null |
 | ami_owner | AMI owner ID | null |
-| bastion_destroy | Destroy bastion host used configuration after automation completes | null |
+| bastion_destroy | Destroy bastion host after automation completes | null |
 | bastion_ami | Bastion host AMI ID | null |
 | bastion_ami_filter | Bastion AMI filter criteria | null |
 | bastion_ami_owner | Bastion AMI owner ID | null |
@@ -41,24 +41,25 @@ This stack creates a complete Kafka cluster on AWS EC2 instances, including ZooK
 | labels | Configuration for labels | null |
 | cloud_tags_hash | Resource tags for cloud provider | null |
 
-## Features
-- Automated deployment of complete Kafka ecosystem on AWS
-- Configurable number of instances for each service component
-- Secure access through bastion host
-- Custom AMI support for specialized environments
-- Option to destroy bastion host after configuration for enhanced security
-
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::new_ec2_ssh_key](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/new_ec2_ssh_key)
-- [config0-publish:::ec2_ubuntu](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/ec2_ubuntu)
-- [config0-publish:::kafka_cluster_on_ubuntu](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/kafka_cluster_on_ubuntu)
-- [config0-publish:::delete_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_resource)
+- [config0-publish:::new_ec2_ssh_key](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/new_ec2_ssh_key/default)
+- [config0-publish:::ec2_ubuntu](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/ec2_ubuntu/default)
+- [config0-publish:::kafka_cluster_on_ubuntu](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/kafka_cluster_on_ubuntu/default)
+- [config0-publish:::delete_resource](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/stacks/config0-publish/delete_resource/default)
+
+### Execgroups
+- [config0-publish:::github::lambda_trigger_stepf](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/exec/groups/config0-publish/github/lambda_trigger_stepf/default)
+
+### Shelloutconfigs
+- [config0-publish:::terraform::resource_wrapper](http://config0.http.redirects.s3-website-us-east-1.amazonaws.com/assets/shelloutconfigs/config0-publish/terraform/resource_wrapper/default)
 
 ## License
+<pre>
 Copyright (C) 2025 Gary Leong <gary@config0.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, version 3 of the License.
+</pre>
