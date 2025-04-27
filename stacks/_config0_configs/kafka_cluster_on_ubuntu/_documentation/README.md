@@ -26,7 +26,7 @@ This stack automates the deployment of a complete Kafka cluster on Ubuntu server
 |------|-------------|---------|
 | vm_username | Configuration for vm username | ubuntu |
 | publish_to_saas | Boolean to publish values to config0 SaaS UI | null |
-| tf_runtime | Terraform runtime version | tofu:1.6.2 |
+| tf_runtime | Terraform runtime version | tofu:1.9.1 |
 | ansible_docker_image | Ansible container image | config0/ansible-run-env |
 
 ## Dependencies

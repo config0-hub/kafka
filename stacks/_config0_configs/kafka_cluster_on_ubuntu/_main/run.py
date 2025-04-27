@@ -64,7 +64,7 @@ def run(stackargs):
 
     stack.parse.add_optional(key="vm_username", default="ubuntu")
     stack.parse.add_optional(key="publish_to_saas", default="null")
-    stack.parse.add_optional(key="tf_runtime", default="tofu:1.6.2")
+    stack.parse.add_optional(key="tf_runtime", default="tofu:1.9.1")
     stack.parse.add_optional(key="ansible_docker_image", default="config0/ansible-run-env")
 
     # add host group
