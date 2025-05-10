@@ -66,17 +66,26 @@ class Main(newSchedStack):
         self.parse.add_required(key="num_of_control_center", types="int", default=1)
         
         self.parse.add_optional(key="ami", default="null")
-        self.parse.add_optional(key="ami_filter", default="null")
-        self.parse.add_optional(key="ami_owner", default="null")
+        self.parse.add_optional(key="ami_filter",
+                                types="str",
+                                default='ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*')
+        self.parse.add_optional(key="ami_owner",
+                                default='099720109477')
+
         self.parse.add_optional(key="bastion_destroy", default="null")
 
         # bastion configs
         self.parse.add_required(key="bastion_sg_id", default="null")
         self.parse.add_required(key="bastion_subnet_ids", default="null")
         self.parse.add_optional(key="bastion_ami", default="null")
-        self.parse.add_optional(key="bastion_ami_filter", default="null")
-        self.parse.add_optional(key="bastion_ami_owner", default="null")
-        
+
+        self.parse.add_optional(key="bastion_ami_filter",
+                                types = "str",
+                                default="ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*")
+
+        self.parse.add_optional(key="bastion_ami_owner",
+                                default='099720109477')
+
         self.parse.add_optional(key="aws_default_region", 
                                types="str", 
                                tags="create,bastion,kafka", 
