@@ -99,11 +99,8 @@ class Main(ResourceCmdHelper):
 
         self.config_file.close()
         self.logger.debug(f"Created Ansible host config file {self.config_file_path}")
+
         
-        # Uncomment to sync configuration to shared location
-        # self.sync_to_share()
-
-
 def usage():
     """Print usage information for the script."""
     print("""
