@@ -1,0 +1,10 @@
+- name: Zookeeper Provisioning
+  hosts: zookeeper
+  remote_user: "{{ os_user }}"
+  become: true
+  gather_facts: yes
+  tags:
+    - zookeeper
+  tasks:
+  - import_role:
+      name: ../roles/confluent.zookeeper
