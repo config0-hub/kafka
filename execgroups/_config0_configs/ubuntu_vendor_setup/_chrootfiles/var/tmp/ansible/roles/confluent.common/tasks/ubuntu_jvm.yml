@@ -1,0 +1,8 @@
+- name: Add open JDK repo
+  apt_repository:
+    repo: "{{ubuntu_java_repository}}"
+- name: Install Java
+  apt:
+    name: "{{ubuntu_java_package_name}}"
+    force: True
+    update_cache: yes

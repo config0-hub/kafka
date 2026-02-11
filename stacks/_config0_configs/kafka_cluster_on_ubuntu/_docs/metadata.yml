@@ -1,0 +1,14 @@
+desc: Deploys a complete Kafka cluster ecosystem with ZooKeeper, brokers, Schema Registry, Connect, REST, KSQL, and Control Center.
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3.0
+categories: 
+   - kafka
+   - ansible
+   - message_queue
+tags:
+   - ansible
+   - kafka
+   - vms
+   - cloud
+   - public_cloud

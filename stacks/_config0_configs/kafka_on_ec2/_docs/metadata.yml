@@ -1,0 +1,17 @@
+desc: This stack creates a complete Kafka cluster on AWS EC2 instances with ZooKeeper, Brokers, Schema Registry, Connect, REST, KSQL, and Control Center components
+release: 0.0.1
+author: Gary Leong <gary@config0.com>
+license: GNU General Public License v3.0
+categories: 
+   - message_queue
+   - kafka
+   - ansible
+tags:
+   - ansible
+   - kafka
+   - vms
+   - infrastructure
+   - featured_infrastructure
+   - featured
+   - cloud
+   - public_cloud
