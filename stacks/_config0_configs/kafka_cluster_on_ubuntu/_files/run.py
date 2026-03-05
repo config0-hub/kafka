@@ -68,10 +68,10 @@ def run(stackargs):
     stack.parse.add_optional(key="ansible_docker_image", default="config0/ansible-run-env")
 
     # add host group
-    stack.add_hostgroups("config0-publish:::ubuntu::docker", "install_docker")
-    stack.add_hostgroups("config0-publish:::ansible::ubuntu", "install_python")
-    stack.add_hostgroups("config0-publish:::kafka::ubuntu_vendor_setup", "ubuntu_vendor_setup")
-    stack.add_hostgroups("config0-publish:::kafka::ubuntu_vendor_init_cluster", "ubuntu_vendor_init_cluster")
+    stack.add_hostgroups("config0-hub:::ubuntu::docker", "install_docker")
+    stack.add_hostgroups("config0-hub:::ansible::ubuntu", "install_python")
+    stack.add_hostgroups("config0-hub:::kafka::ubuntu_vendor_setup", "ubuntu_vendor_setup")
+    stack.add_hostgroups("config0-hub:::kafka::ubuntu_vendor_init_cluster", "ubuntu_vendor_init_cluster")
 
     # Initialize 
     stack.init_variables()

@@ -1,4 +1,2 @@
-asset_type: shelloutconfig
-env_vars: []
-shelloutconfigs:
-- config0-publish:::kafka::create_ansible_replica_hosts
+scripts:
+- config0-hub:::kafka::create_ansible_replica_hosts.sh

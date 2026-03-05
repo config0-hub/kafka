@@ -44,10 +44,10 @@ This stack creates a complete Kafka cluster on AWS EC2 instances, including ZooK
 ## Dependencies
 
 ### Substacks
-- [config0-publish:::new_ec2_ssh_key](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/new_ec2_ssh_key)
-- [config0-publish:::ec2_ubuntu](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/ec2_ubuntu)
-- [config0-publish:::kafka_cluster_on_ubuntu](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/kafka_cluster_on_ubuntu)
-- [config0-publish:::delete_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-publish/delete_resource)
+- [config0-hub:::aws::new_ec2_ssh_key](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/new_ec2_ssh_key)
+- [config0-hub:::ubuntu::ec2_ubuntu](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/ec2_ubuntu)
+- [config0-hub:::kafka::kafka_cluster_on_ubuntu](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/kafka_cluster_on_ubuntu)
+- [config0-hub:::config0_core::delete_resource](https://api-app.config0.com/web_api/v1.0/stacks/config0-hub/delete_resource)
 
 ## License
 <pre>

@@ -33,10 +33,10 @@ This stack automates the deployment of a complete Kafka cluster on Ubuntu server
 
 ### Execgroups
 
-- [config0-publish:::ubuntu::docker](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-publish/ubuntu/docker)
-- [config0-publish:::ansible::ubuntu](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-publish/ansible/ubuntu)
-- [config0-publish:::kafka::ubuntu_vendor_setup](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-publish/kafka/ubuntu_vendor_setup)
-- [config0-publish:::kafka::ubuntu_vendor_init_cluster](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-publish/kafka/ubuntu_vendor_init_cluster)
+- [config0-hub:::ubuntu::docker](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/ubuntu/docker)
+- [config0-hub:::ansible::ubuntu](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/ansible/ubuntu)
+- [config0-hub:::kafka::ubuntu_vendor_setup](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/kafka/ubuntu_vendor_setup)
+- [config0-hub:::kafka::ubuntu_vendor_init_cluster](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/kafka/ubuntu_vendor_init_cluster)
 
 ## License
 <pre>
