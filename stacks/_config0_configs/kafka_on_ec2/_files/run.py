@@ -16,7 +16,7 @@
 """
 
 
-def _vm_create(server_type, num, stack):
+def _vm_create(server_type, count, stack):
     """Create VMs for a specific server type in the Kafka cluster."""
     arguments = stack.get_tagged_vars(tag="create", output="dict")
     arguments["ip_key"] = "private_ip"
@@ -31,7 +31,7 @@ def _vm_create(server_type, num, stack):
     hosts = []
 
     # Create ec2 instances
-    for num in range(int(num)):
+    for num in range(int(count)):
         hostname = f"{stack.hostname_base}-{server_type}-num-{num}".replace("_", "-")
         hosts.append(hostname)
 
@@ -64,7 +64,7 @@ class Main(newSchedStack):
         self.parse.add_required(key="num_of_rest", types="int", default=1)
         self.parse.add_required(key="num_of_ksql", types="int", default=1)
         self.parse.add_required(key="num_of_control_center", types="int", default=1)
-        
+
         self.parse.add_optional(key="ami", default="null")
         self.parse.add_optional(key="ami_filter",
                                 types="str",
@@ -81,16 +81,16 @@ class Main(newSchedStack):
 
         self.parse.add_optional(key="bastion_ami_filter",
                                 types = "str",
-                                default="ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*")
+                                default="ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*")
 
         self.parse.add_optional(key="bastion_ami_owner",
                                 default='099720109477')
 
-        self.parse.add_optional(key="aws_default_region", 
-                               types="str", 
-                               tags="create,bastion,kafka", 
+        self.parse.add_optional(key="aws_default_region",
+                               types="str",
+                               tags="create,bastion,kafka",
                                default="us-east-1")
-        
+
         self.parse.add_required(key="sg_id", tags="create", default="null")
         self.parse.add_required(key="vpc_id", types="str", tags="create,bastion", default="null")
         self.parse.add_required(key="subnet_ids", tags="create", default="null")
@@ -98,9 +98,9 @@ class Main(newSchedStack):
         self.parse.add_optional(key="disksize", types="int", tags="create,bastion", default="20")
         self.parse.add_optional(key="publish_to_saas", default="null")
         self.parse.add_optional(key="labels", default="null")
-        self.parse.add_optional(key="cloud_tags_hash", 
-                               types="str", 
-                               tags="create,bastion", 
+        self.parse.add_optional(key="cloud_tags_hash",
+                               types="str",
+                               tags="create,bastion",
                                default='null')
 
         # Add substack
@@ -284,10 +284,6 @@ class Main(newSchedStack):
         sched.job = "sshkey"
         sched.archive.timeout = 1800
         sched.archive.timewait = 120
-        sched.archive.cleanup.instance = "clear"
-        sched.failure.keep_resources = True
-        sched.conditions.retries = 1
-        sched.automation_phase = "infrastructure"
         sched.human_description = "Create and upload ssh-key"
         sched.on_success = ["bastion"]
         self.add_schedule()
@@ -296,9 +292,6 @@ class Main(newSchedStack):
         sched.job = "bastion"
         sched.archive.timeout = 1800
         sched.archive.timewait = 120
-        sched.archive.cleanup.instance = "clear"
-        sched.failure.keep_resources = True
-        sched.automation_phase = "infrastructure"
         sched.human_description = "Create Bastion Config"
         sched.on_success = ["create"]
         self.add_schedule()
@@ -307,9 +300,6 @@ class Main(newSchedStack):
         sched.job = "create"
         sched.archive.timeout = 7200
         sched.archive.timewait = 120
-        sched.archive.cleanup.instance = "clear"
-        sched.failure.keep_resources = True
-        sched.automation_phase = "infrastructure"
         sched.human_description = "Create Kafka Cluster"
         sched.conditions.dependency = ["sshkey"]
         sched.on_success = ["cleanup"]
@@ -319,9 +309,6 @@ class Main(newSchedStack):
         sched.job = "cleanup"
         sched.archive.timeout = 1800
         sched.archive.timewait = 120
-        sched.archive.cleanup.instance = "clear"
-        sched.failure.keep_resources = True
-        sched.automation_phase = "infrastructure"
         sched.human_description = "Destroy Bastion Config"
         self.add_schedule()
 

@@ -20,10 +20,9 @@ def _get_ssh_key(stack):
         "must_exists": True,
         "resource_type": "ssh_key_pair",
         "name": stack.ssh_key_name,
-        "serialize": True,
         "serialize_fields": ["private_key"]
     }
-    return stack.get_resource(decrypt=True, **_lookup)["private_key"]
+    return stack.get_resource(**_lookup)["private_key"]
 
 def _get_private_ips_frm_hosts(hosts, stack):
     _lookup = {
@@ -73,7 +72,7 @@ def run(stackargs):
     stack.add_hostgroups("config0-hub:::kafka::ubuntu_vendor_setup", "ubuntu_vendor_setup")
     stack.add_hostgroups("config0-hub:::kafka::ubuntu_vendor_init_cluster", "ubuntu_vendor_init_cluster")
 
-    # Initialize 
+    # Initialize
     stack.init_variables()
     stack.init_hostgroups()
 
