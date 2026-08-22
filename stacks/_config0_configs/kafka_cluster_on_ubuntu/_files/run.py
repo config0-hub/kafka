@@ -116,9 +116,9 @@ def run(stackargs):
 
     # install python on hosts for ansible
     human_description = "Install Python for Ansible"
+    workspace_id = stack.random_id(size=10)
     env_vars = {
         "METHOD": "create",
-        "STATEFUL_ID": stack.random_id(size=10),
         "ANS_VAR_private_key": private_key,
         "ANS_VAR_exec_ymls": "entry_point/10-install-python.yml",
         "ANS_VAR_host_ips": ",".join(host_ips)
@@ -128,7 +128,7 @@ def run(stackargs):
         "display": True,
         "human_description": human_description,
         "env_vars": json.dumps(env_vars),
-        "stateful_id": env_vars["STATEFUL_ID"],
+        "workspace_id": workspace_id,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
         "groups": stack.install_python
@@ -139,14 +139,13 @@ def run(stackargs):
     # Main Ansible configs
     ###############################################################
     # base env variables
-    stateful_id = stack.random_id(size=10)
+    workspace_id = stack.random_id(size=10)
 
     human_description = "Setting up Ansible"
 
     base_env_vars = {
         "METHOD": "create",
         "DOCKER_IMAGE": stack.ansible_docker_image,
-        "STATEFUL_ID": stateful_id,
         "ANS_VAR_private_key": private_key,
         "ANS_VAR_kafka_zookeeper": ",".join(kafka_zookeeper_ips),
         "ANS_VAR_kafka_broker": ",".join(kafka_broker_ips),
@@ -162,7 +161,7 @@ def run(stackargs):
         "display": True,
         "human_description": human_description,
         "env_vars": json.dumps(base_env_vars.copy()),
-        "stateful_id": stateful_id,
+        "workspace_id": workspace_id,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
         "groups": stack.ubuntu_vendor_setup
@@ -193,7 +192,7 @@ def run(stackargs):
         "display": True,
         "human_description": human_description,
         "env_vars": json.dumps(env_vars),
-        "stateful_id": stateful_id,
+        "workspace_id": workspace_id,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
         "groups": stack.ubuntu_vendor_init_cluster

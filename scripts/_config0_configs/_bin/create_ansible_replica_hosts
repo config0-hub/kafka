@@ -58,26 +58,11 @@ def configure_logging() -> None:
     )
 
 
-def require_stateful_id() -> str:
-    stateful_id = os.environ.get("STATEFUL_ID")
-    if not stateful_id:
-        raise RuntimeError("class var stateful_id must be set")
-    return stateful_id
-
-
-def validate_stateful_dir(stateful_id: str) -> str | None:
-    stateful_dir = os.environ.get("STATEFUL_DIR")
-    if not stateful_dir:
-        return None
-
-    normalized = os.path.normpath(stateful_dir)
-    stateful_dir_id = os.path.basename(normalized)
-    if stateful_dir_id != stateful_id:
-        raise ValueError(
-            f"STATEFUL_DIR basename {stateful_dir_id!r} does not match "
-            f"stateful_id {stateful_id!r}"
-        )
-    return normalized
+def require_workspace_id() -> str:
+    workspace_id = os.environ.get("WORKSPACE_ID")
+    if not workspace_id:
+        raise RuntimeError("class var WORKSPACE_ID must be set")
+    return workspace_id
 
 
 def ansible_app_dir() -> str:
@@ -90,13 +75,11 @@ def ansible_app_dir() -> str:
 
 
 def runtime_root() -> str:
-    for env_name in ("CHROOTFILES_DEST_DIR", "STATEFUL_DIR", "EXEC_BASE_DIR"):
+    for env_name in ("CHROOTFILES_DEST_DIR", "EXEC_BASE_DIR"):
         value = os.environ.get(env_name)
         if value:
             return os.path.normpath(value)
-    raise RuntimeError(
-        "one of CHROOTFILES_DEST_DIR, STATEFUL_DIR, or EXEC_BASE_DIR must be set"
-    )
+    raise RuntimeError("one of CHROOTFILES_DEST_DIR or EXEC_BASE_DIR must be set")
 
 
 def resolve_exec_dir() -> str:
@@ -229,8 +212,7 @@ class Main:
     def __init__(self) -> None:
         """Initialize the helper with Ansible app configuration."""
         self.classname = "KAFKA_ANSIBLE_HELPER"
-        self.stateful_id = require_stateful_id()
-        validate_stateful_dir(self.stateful_id)
+        self.workspace_id = require_workspace_id()
         self.exec_dir = resolve_exec_dir()
         self.template_dir = f"{self.exec_dir}/_config0_templates"
         self.inputargs: dict[str, object] = {}
