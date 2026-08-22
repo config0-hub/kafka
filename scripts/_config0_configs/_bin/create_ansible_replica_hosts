@@ -6,8 +6,7 @@
 # It creates host groups for different Kafka components (zookeeper, broker, etc.)
 # based on IP addresses provided through environment variables or JSON input.
 #
-# The script uses Config0 resource management framework for handling inputs
-# and configuration.
+# The host delivery path runs this script with stdlib only.
 # ------------------------------------------------------------------------------
 # Copyright (C) 2025 Gary Leong <gary@config0.com>
 #
@@ -25,67 +24,388 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 # ------------------------------------------------------------------------------
 
+from __future__ import annotations
+
+import logging
+import os
+from pathlib import Path
+import re
 import sys
 
-from config0_publisher.loggerly import Config0Logger
-from config0_publisher.resource.manage import ResourceCmdHelper
+APP_DIR_ENV = "ANSIBLE_DIR"
+DEFAULT_APP_DIR = "var/tmp/ansible"
+OS_ENV_PREFIX = "ANS_VAR"
+STANDARD_ENV_VARS = (
+    "JOB_INSTANCE_ID",
+    "SCHEDULE_ID",
+    "RUN_ID",
+    "RESOURCE_TYPE",
+    "METHOD",
+    "PHASE",
+)
+SIMPLE_TEMPLATE_PATTERN = re.compile(r"{{\s*([A-Za-z_][A-Za-z0-9_]*)\s*}}")
+
+logger = logging.getLogger("config0")
 
 
-class Main(ResourceCmdHelper):
-    """
-    Helper class for generating Kafka Ansible host configuration files.
-    Inherits from Config0's ResourceCmdHelper for input handling and templating.
-    """
+def configure_logging() -> None:
+    level_name = os.environ.get("ED_LOGLEVEL", "INFO").upper()
+    level = getattr(logging, level_name, logging.INFO)
+    logging.basicConfig(
+        level=level,
+        stream=sys.stdout,
+        format="%(levelname)s %(message)s",
+    )
 
-    def __init__(self):
-        """Initialize the helper with Ansible app configuration."""
-        ResourceCmdHelper.__init__(
-            self,
-            app_name="ansible",
-            set_must_exists=["stateful_id"]
+
+def require_stateful_id() -> str:
+    stateful_id = os.environ.get("STATEFUL_ID")
+    if not stateful_id:
+        raise RuntimeError("class var stateful_id must be set")
+    return stateful_id
+
+
+def validate_stateful_dir(stateful_id: str) -> str | None:
+    stateful_dir = os.environ.get("STATEFUL_DIR")
+    if not stateful_dir:
+        return None
+
+    normalized = os.path.normpath(stateful_dir)
+    stateful_dir_id = os.path.basename(normalized)
+    if stateful_dir_id != stateful_id:
+        raise ValueError(
+            f"STATEFUL_DIR basename {stateful_dir_id!r} does not match "
+            f"stateful_id {stateful_id!r}"
+        )
+    return normalized
+
+
+def ansible_app_dir() -> str:
+    app_dir = os.environ.get(APP_DIR_ENV)
+    if not app_dir:
+        app_dir = DEFAULT_APP_DIR
+    if app_dir.startswith("/"):
+        app_dir = app_dir[1:]
+    return app_dir
+
+
+def runtime_root() -> str:
+    for env_name in ("CHROOTFILES_DEST_DIR", "STATEFUL_DIR", "EXEC_BASE_DIR"):
+        value = os.environ.get(env_name)
+        if value:
+            return os.path.normpath(value)
+    raise RuntimeError(
+        "one of CHROOTFILES_DEST_DIR, STATEFUL_DIR, or EXEC_BASE_DIR must be set"
+    )
+
+
+def resolve_exec_dir() -> str:
+    exec_dir = os.path.join(runtime_root(), ansible_app_dir())
+    Path(exec_dir).mkdir(parents=True, exist_ok=True)
+    return exec_dir
+
+
+def parse_set_env_vars(env_vars: tuple[str, ...]) -> dict[str, str | bool]:
+    inputargs: dict[str, str | bool] = {}
+    for env_var in env_vars:
+        raw = os.environ.get(env_var.upper())
+        if not raw:
+            continue
+        if raw == "None":
+            continue
+        if raw == "False":
+            inputargs[env_var.lower()] = False
+            continue
+        inputargs[env_var.lower()] = raw
+    return inputargs
+
+
+def parse_env_var_comma_list(name: str) -> list[str]:
+    raw = os.environ.get(name)
+    if not raw:
+        return []
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def ansible_env_inputargs() -> dict[str, str]:
+    split_key = f"{OS_ENV_PREFIX}_"
+    inputargs: dict[str, str] = {}
+    for env_name, value in os.environ.items():
+        if OS_ENV_PREFIX not in env_name:
+            continue
+        parts = env_name.split(split_key)
+        if len(parts) < 2:
+            raise ValueError(
+                f"environment variable {env_name!r} contains {OS_ENV_PREFIX!r} "
+                f"but not {split_key!r}"
+            )
+        inputargs[parts[1].lower()] = value
+    return inputargs
+
+
+def merge_missing(target: dict[str, object], source: dict[str, object]) -> None:
+    for key, value in source.items():
+        if key in target:
+            continue
+        target[key] = value
+
+
+def remap_app_vars(inputargs: dict[str, object]) -> None:
+    split_char = f"{OS_ENV_PREFIX}_"
+    add_values: dict[str, object] = {}
+    keys_to_delete: list[str] = []
+
+    for key, value in inputargs.items():
+        if split_char not in key:
+            continue
+        mapped_key = key.split(split_char)[-1]
+        add_values[mapped_key] = value
+        keys_to_delete.append(key)
+        logger.debug("mapped key %s value %s", key, value)
+
+    inputargs.update(add_values)
+    for key_to_delete in keys_to_delete:
+        del inputargs[key_to_delete]
+
+
+def resolve_method(inputargs: dict[str, object]) -> object:
+    if "method" in inputargs:
+        return inputargs["method"]
+    return "create"
+
+
+def list_template_files(
+    rootdir: str,
+    split_dir: str | None = None,
+) -> list[dict[str, str]] | None:
+    if not split_dir:
+        split_dir = os.path.basename(rootdir) if rootdir else "_ed_templates"
+
+    if not os.path.exists(rootdir):
+        return None
+
+    base_files: list[str] = []
+    for root, _subfolders, files in os.walk(rootdir):
+        temp_list = [os.path.join(root, filename) for filename in files]
+        if not temp_list:
+            continue
+        for file_path in temp_list:
+            if not re.search(".ja2$", file_path):
+                continue
+            base_files.append(file_path)
+
+    file_list: list[dict[str, str]] = []
+    for file_path in base_files:
+        rel_file = file_path.split(f"{split_dir}/")[-1]
+        filename = os.path.basename(rel_file)
+        directory = os.path.dirname(rel_file) if rel_file else ""
+        file_list.append(
+            {"file": file_path, "filename": filename, "directory": directory}
         )
 
-        self.classname = 'KAFKA_ANSIBLE_HELPER'
-        self.logger = Config0Logger(self.classname, logcategory="cloudprovider")
-        self.logger.debug(f"Instantiating {self.classname}")
-        self.set_inputargs(add_app_vars=True)
-   
-        # Remap application variables if needed
-        self.remap_app_vars()
+    return file_list
 
-    def _add_ips_to_hosts(self, args_key, ansible_key):
+
+def render_template(template_text: str, template_vars: dict[str, str]) -> str:
+    def replace_var(match: re.Match[str]) -> str:
+        key = match.group(1)
+        if key not in template_vars:
+            raise KeyError(f"template variable {key!r} is not set")
+        return template_vars[key]
+
+    rendered = SIMPLE_TEMPLATE_PATTERN.sub(replace_var, template_text)
+    if "{{" in rendered or "{%" in rendered or "{#" in rendered:
+        raise RuntimeError(
+            "template contains unsupported Jinja2 syntax for the stdlib host renderer"
+        )
+    return rendered
+
+
+class Main:
+    """
+    Helper class for generating Kafka Ansible host configuration files.
+    """
+
+    def __init__(self) -> None:
+        """Initialize the helper with Ansible app configuration."""
+        self.classname = "KAFKA_ANSIBLE_HELPER"
+        self.stateful_id = require_stateful_id()
+        validate_stateful_dir(self.stateful_id)
+        self.exec_dir = resolve_exec_dir()
+        self.template_dir = f"{self.exec_dir}/_config0_templates"
+        self.inputargs: dict[str, object] = {}
+        logger.debug("Instantiating %s", self.classname)
+        self.set_inputargs(add_app_vars=True)
+        remap_app_vars(self.inputargs)
+
+    def set_inputargs(self, *, add_app_vars: bool = False) -> None:
+        if add_app_vars:
+            merge_missing(self.inputargs, ansible_env_inputargs())
+        merge_missing(self.inputargs, parse_set_env_vars(STANDARD_ENV_VARS))
+        for key, value in list(self.inputargs.items()):
+            if value == "False":
+                self.inputargs[key] = False
+
+    def check_required_inputargs(self, *, keys: list[str]) -> bool:
+        required_keys = [key for key in keys if key not in self.inputargs]
+        if not required_keys:
+            return True
+
+        found = list(self.inputargs.keys())
+        logger.error("These keys missing and need to be set:")
+        logger.error("\tkeys found include: %s", found)
+        for key in required_keys:
+            logger.error(
+                "\t%s or Environmental Variable %s/%s_%s",
+                key,
+                key.upper(),
+                OS_ENV_PREFIX,
+                key,
+            )
+        raise SystemExit(9)
+
+    def _get_template_vars(self) -> list[str] | None:
+        template_vars_name = f"{APP_DIR_ENV.removesuffix('_DIR')}_EXEC_TEMPLATE_VARS"
+        if not os.environ.get(template_vars_name.upper()):
+            template_vars_name = "ED_EXEC_TEMPLATE_VARS"
+
+        if os.environ.get(template_vars_name.upper()):
+            return parse_env_var_comma_list(template_vars_name.upper())
+
+        template_vars: list[str] = []
+        for env_name in os.environ:
+            if OS_ENV_PREFIX not in env_name:
+                continue
+            logger.debug("%s found in %s", OS_ENV_PREFIX, env_name)
+            logger.debug("templating variable %s", env_name)
+            template_vars.append(env_name)
+
+        if not template_vars:
+            logger.warning(
+                "ED_EXEC_TEMPLATE_VARS and <APP> template vars not set/given"
+            )
+
+        return template_vars
+
+    def templify(self, *, clobber: bool = False) -> bool | None:
+        template_vars_names = self._get_template_vars()
+        if not template_vars_names:
+            logger.debug("template vars is not set or empty")
+            return None
+
+        logger.debug("template vars %s not set or empty", template_vars_names)
+
+        if not self.template_dir:
+            logger.warning("template_dir not set (None) - skipping templating")
+            return None
+
+        template_files = list_template_files(self.template_dir)
+        if not template_files:
+            logger.warning(
+                "template_files in directory %s empty - skipping templating",
+                self.template_dir,
+            )
+            return None
+
+        for file_stats in template_files:
+            template_filepath = file_stats["file"]
+            file_dir = os.path.join(self.exec_dir, file_stats["directory"])
+            file_path = os.path.join(
+                self.exec_dir,
+                file_stats["directory"],
+                file_stats["filename"].split(".ja2")[0],
+            )
+
+            Path(file_dir).mkdir(parents=True, exist_ok=True)
+
+            if os.path.exists(file_path) and not clobber:
+                logger.warning(
+                    "destination templated file already exists at %s - "
+                    "skipping templifying of it",
+                    file_path,
+                )
+                continue
+
+            logger.debug(
+                "creating templated file file %s from %s",
+                file_path,
+                template_filepath,
+            )
+
+            template_values: dict[str, str] = {}
+            split_char = f"{OS_ENV_PREFIX}_"
+
+            for var_name in template_vars_names:
+                value: str | None = None
+                mapped_key: str | None = None
+
+                if OS_ENV_PREFIX in var_name:
+                    key = var_name.split(split_char)[1]
+                    value = os.environ.get(var_name)
+                else:
+                    key = str(f"{OS_ENV_PREFIX}_{var_name}")
+                    value = os.environ.get(key)
+
+                if value:
+                    mapped_key = key
+
+                if not value:
+                    value = os.environ.get(str(var_name))
+                    if value:
+                        mapped_key = var_name
+
+                if not value:
+                    value = os.environ.get(str(var_name.upper()))
+                    if value:
+                        mapped_key = var_name.upper()
+
+                logger.debug("mapped_key %s", mapped_key)
+                logger.debug("var %s", var_name)
+                logger.debug("value %s", value)
+
+                if not value:
+                    logger.warning("skipping templify var %s", var_name)
+                    continue
+                if mapped_key is None:
+                    raise RuntimeError(f"could not map template var {var_name!r}")
+
+                normalized_value = value.replace("'", '"')
+                template_values[mapped_key] = normalized_value
+                template_values[mapped_key.upper()] = normalized_value
+
+            logger.debug("template_vars %s", template_values)
+
+            with open(template_filepath, encoding="utf-8") as template_file:
+                output_text = render_template(template_file.read(), template_values)
+            with open(file_path, "w", encoding="utf-8") as writefile:
+                writefile.write(output_text)
+
+        return True
+
+    def _add_ips_to_hosts(self, args_key: str, ansible_key: str) -> None:
         """
-        Add IP addresses from input to the Ansible hosts file 
-        under the specified group name.
-        
-        Args:
-            args_key (str): Key in inputargs containing comma-separated IPs
-            ansible_key (str): Ansible host group name
+        Add IP addresses from input to the Ansible hosts file under a group name.
         """
-        self.config_file.write(f'[{ansible_key}]')
+        self.config_file.write(f"[{ansible_key}]")
         self.config_file.write("\n")
 
-        for _ip in self.inputargs[args_key].split(","):
-            self.config_file.write(_ip)
+        raw_ips = self.inputargs[args_key]
+        if not isinstance(raw_ips, str):
+            raise TypeError(f"{args_key} must be a comma-separated string")
+
+        for ip_address in raw_ips.split(","):
+            self.config_file.write(ip_address)
             self.config_file.write("\n")
 
         self.config_file.write("\n")
 
-    def create(self):
+    def create(self) -> None:
         """
-        Create the Ansible hosts file with all Kafka component groups:
-        - zookeeper
-        - kafka_broker
-        - schema_registry
-        - kafka_connect
-        - kafka_rest
-        - ksql
-        - control_center
+        Create the Ansible hosts file with all Kafka component groups.
         """
         self.config_file_path = f"{self.exec_dir}/hosts"
-        self.config_file = open(self.config_file_path, "w")
+        self.config_file = open(self.config_file_path, "w", encoding="utf-8")
 
-        # Add each Kafka component group to the hosts file
         self._add_ips_to_hosts("kafka_zookeeper", "zookeeper")
         self._add_ips_to_hosts("kafka_broker", "kafka_broker")
         self._add_ips_to_hosts("kafka_schema_registry", "schema_registry")
@@ -94,16 +414,16 @@ class Main(ResourceCmdHelper):
         self._add_ips_to_hosts("kafka_ksql", "ksql")
         self._add_ips_to_hosts("kafka_control_center", "control_center")
 
-        # Process any templates and update vars
         self.templify(clobber=True)
 
         self.config_file.close()
-        self.logger.debug(f"Created Ansible host config file {self.config_file_path}")
+        logger.debug("Created Ansible host config file %s", self.config_file_path)
 
         
-def usage():
+def usage() -> None:
     """Print usage information for the script."""
-    print("""
+    print(
+        """
 Usage:
   script + environmental variables
   or
@@ -122,23 +442,16 @@ Environmental variables:
     ANS_VAR_kafka_ksql              (comma-separated IPs)
     ANS_VAR_kafka_control_center    (comma-separated IPs)
     METHOD
-    """)
-    exit(4)
+    """
+    )
+    raise SystemExit(4)
 
 
-if __name__ == '__main__':
-    # Check for JSON input as command-line argument
-    try:
-        json_input = sys.argv[1]
-    except IndexError:
-        json_input = None
-
-    # Initialize main class
+if __name__ == "__main__":
+    configure_logging()
     main = Main()
 
-    # Execute the appropriate method
-    if main.inputargs.get("method", "create") == "create":
-        # Define required input keys
+    if resolve_method(main.inputargs) == "create":
         required_keys = [
             "kafka_zookeeper",
             "kafka_broker",
@@ -146,16 +459,11 @@ if __name__ == '__main__':
             "kafka_connect",
             "kafka_rest",
             "kafka_ksql",
-            "kafka_control_center"
+            "kafka_control_center",
         ]
-
-        # Validate all required inputs are present
         main.check_required_inputargs(keys=required_keys)
-        
-        # Create the hosts file
         main.create()
     else:
-        # Only show an error if the method is not supported
         usage()
-        print(f'Method "{main.inputargs.get("method", "create")}" not supported!')
-        exit(4)
+        print(f'Method "{resolve_method(main.inputargs)}" not supported!')
+        raise SystemExit(4)
