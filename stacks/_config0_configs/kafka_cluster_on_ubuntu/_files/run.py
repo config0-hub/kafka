@@ -52,6 +52,8 @@ def run(stackargs):
     stack.parse.add_required(key="kafka_cluster")
     stack.parse.add_required(key="ssh_key_name")
     stack.parse.add_required(key="aws_default_region")
+    # selects the ssm_ec2_exec_eventbridge install the host orders run through
+    stack.parse.add_required(key="install_name")
 
     stack.parse.add_required(key="zookeeper_hosts")
     stack.parse.add_required(key="broker_hosts")
@@ -83,6 +85,7 @@ def run(stackargs):
         "human_description": human_description,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
+        "install_name": stack.install_name,
         "groups": stack.install_docker
     }
     stack.add_groups_to_host(**inputargs)
@@ -131,6 +134,7 @@ def run(stackargs):
         "workspace_id": workspace_id,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
+        "install_name": stack.install_name,
         "groups": stack.install_python
     }
     stack.add_groups_to_host(**inputargs)
@@ -164,6 +168,7 @@ def run(stackargs):
         "workspace_id": workspace_id,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
+        "install_name": stack.install_name,
         "groups": stack.ubuntu_vendor_setup
     }
     stack.add_groups_to_host(**inputargs)
@@ -195,6 +200,7 @@ def run(stackargs):
         "workspace_id": workspace_id,
         "automation_phase": "infrastructure",
         "hostname": stack.bastion_hostname,
+        "install_name": stack.install_name,
         "groups": stack.ubuntu_vendor_init_cluster
     }
     stack.add_groups_to_host(**inputargs)

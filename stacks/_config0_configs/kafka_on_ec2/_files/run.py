@@ -91,6 +91,10 @@ class Main(newSchedStack):
                                tags="create,bastion,kafka",
                                default="us-east-1")
 
+        # selects the ssm_ec2_exec_eventbridge install the host orders run
+        # through; tagged so it rides into kafka_cluster_on_ubuntu
+        self.parse.add_required(key="install_name", types="str", tags="kafka")
+
         self.parse.add_required(key="sg_id", tags="create", default="null")
         self.parse.add_required(key="vpc_id", types="str", tags="create,bastion", default="null")
         self.parse.add_required(key="subnet_ids", tags="create", default="null")

@@ -12,6 +12,7 @@ This stack automates the deployment of a complete Kafka cluster on Ubuntu server
 | kafka_cluster | Kafka cluster name | &nbsp; |
 | ssh_key_name | Name label for SSH key | &nbsp; |
 | aws_default_region | Default AWS region | &nbsp; |
+| install_name | Name of the `ssm_ec2_exec_eventbridge_install` record the host orders run through | &nbsp; |
 | zookeeper_hosts | List of hostnames for ZooKeeper nodes | &nbsp; |
 | broker_hosts | List of hostnames for Kafka broker nodes | &nbsp; |
 | schema_registry_hosts | List of hostnames for Schema Registry nodes | &nbsp; |

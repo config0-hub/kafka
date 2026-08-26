@@ -15,6 +15,7 @@ This stack creates a complete Kafka cluster on AWS EC2 instances, including ZooK
 | sg_id | Security group ID | &nbsp; |
 | vpc_id | VPC network identifier | &nbsp; |
 | subnet_ids | Subnet ID list | &nbsp; |
+| install_name | Name of the `ssm_ec2_exec_eventbridge_install` record the host orders run through | &nbsp; |
 
 ### Optional Variables
 
