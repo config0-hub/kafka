@@ -275,7 +275,6 @@ class Main(newSchedStack):
             return self.stack.delete_resource.insert(display=True, **inputargs)
 
     def run(self):
-        self.stack.unset_parallel(sched_init=True)
         self.add_job("sshkey")
         self.add_job("bastion")
         self.add_job("create")
