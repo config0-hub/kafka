@@ -170,10 +170,7 @@ class Main(newSchedStack):
             arguments["ami_filter"] = self.stack.bastion_ami_filter
             arguments["ami_owner"] = self.stack.bastion_ami_owner
 
-        try:
-            self.stack.logger.json(arguments)
-        except:
-            self.stack.logger.debug(arguments)
+        self.stack.logger.debug(arguments)
 
         human_description = f"Creating bastion config hostname {self.stack.bastion_hostname} on ec2"
         inputargs = {
