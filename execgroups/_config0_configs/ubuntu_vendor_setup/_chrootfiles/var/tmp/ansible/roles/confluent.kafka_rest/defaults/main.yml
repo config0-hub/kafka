@@ -32,7 +32,7 @@ kafka_rest:
   systemd_file: /usr/lib/systemd/system/confluent-kafka-rest.service
   systemd_override: /etc/systemd/system/confluent-kafka-rest.service.d
   properties:
-    id: "{{groups.kafka_rest.index(inventory_hostname) + 1}}"
+    id: "{{ kafka_rest_id }}"
   systemd:
     enabled: yes
     state: started

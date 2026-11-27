@@ -1,6 +1,6 @@
 - name: Control Center Provisioning
-  hosts: control_center
-  remote_user: "{{ os_user }}"
+  hosts: localhost
+  connection: local
   become: true
   gather_facts: yes
   tags:

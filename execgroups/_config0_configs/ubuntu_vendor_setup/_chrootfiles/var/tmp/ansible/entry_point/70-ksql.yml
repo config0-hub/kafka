@@ -1,6 +1,6 @@
 - name: KSQL Provisioning
-  hosts: ksql
-  remote_user: "{{ os_user }}"
+  hosts: localhost
+  connection: local
   become: true
   gather_facts: yes
   tags:

@@ -1,4 +1,11 @@
 ---
+# Every service user's primary group. Made here, before any Confluent package
+# installs, so the stores below can be given to it.
+- name: Create Confluent Group
+  group:
+    name: confluent
+    system: true
+
 - name: Delete SSL Certificate Directory
   file:
     path: /var/ssl/private
@@ -12,15 +19,6 @@
 
 - name: Create Keystore and Truststore with Self Signed Certs
   include_tasks: self_signed_certs.yml
-  when: self_signed|bool
-
-- name: Create Keystore and Truststore with Custom Certs
-  include_tasks: custom_certs.yml
-  when: ssl_custom_certs|bool
-
-- name: Copy Keystore and Truststore to Host
-  include_tasks: provided_keystore_and_truststore.yml
-  when: ssl_provided_keystore_and_truststore|bool
 
 - set_fact:
     certs_updated: true
@@ -29,3 +27,23 @@
   file:
     path: /var/ssl/private/generation
     state: absent
+
+# The host run's umask 077 leaves the stores 0600 root. Each service runs as
+# its own user in group confluent and reads them.
+- name: Let the Confluent Group Enter the SSL Directory
+  file:
+    path: /var/ssl/private
+    state: directory
+    owner: root
+    group: confluent
+    mode: '0750'
+
+- name: Let the Confluent Group Read the Keystore and Truststore
+  file:
+    path: "{{ item }}"
+    owner: root
+    group: confluent
+    mode: '0640'
+  loop:
+    - "{{ keystore_path }}"
+    - "{{ truststore_path }}"

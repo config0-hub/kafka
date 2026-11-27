@@ -9,7 +9,6 @@
 - name: Install the Kafka Broker Packages
   apt:
     name: "{{item}}={{confluent.package_version}}"
-    force: True
     update_cache: yes
   loop: "{{kafka_broker_packages}}"
   when: ansible_os_family == "Debian"
@@ -97,6 +96,7 @@
   copy:
     src: "kafka.yml"
     dest: "{{jmxexporter_install_path}}/"
+    mode: '0644'
   when: jmxexporter_enabled|bool
 
 - name: Create Service Override Directory

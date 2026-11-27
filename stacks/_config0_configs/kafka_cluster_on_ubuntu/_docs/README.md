@@ -1,6 +1,8 @@
 # Kafka Cluster Deployment
 
-This stack automates the deployment of a complete Kafka cluster on Ubuntu servers. It sets up and configures all necessary components including ZooKeeper, Kafka brokers, Schema Registry, Kafka Connect, REST API, KSQL, and Control Center.
+## Description
+
+This worker stack installs a Kafka cluster on its EC2 nodes: ZooKeeper, Kafka brokers, Schema Registry, Kafka Connect, KSQL, the REST Proxy and Control Center, with TLS on. Each kind is installed in that order, all its nodes in parallel. Host execgroups are delivered directly to each node through the SSM EC2 execution engine and run Ansible in localhost mode. Every node receives the IP lists of all seven kinds, its own private IP and, where its role needs one, its id. The cluster's certificate authority is read from the `<kafka_cluster>_ca.pem` record and reaches the nodes through an SSM secret. No SSH key, bastion, remote inventory, or Docker bootstrap is used.
 
 ## Variables
 
@@ -8,10 +10,8 @@ This stack automates the deployment of a complete Kafka cluster on Ubuntu server
 
 | Name | Description | Default |
 |------|-------------|---------|
-| bastion_hostname | Bastion host name | &nbsp; |
 | kafka_cluster | Kafka cluster name | &nbsp; |
-| ssh_key_name | Name label for SSH key | &nbsp; |
-| aws_default_region | Default AWS region | &nbsp; |
+| aws_default_region | AWS region containing the hosts | &nbsp; |
 | install_name | Name of the `ssm_ec2_exec_eventbridge_install` record the host orders run through | &nbsp; |
 | zookeeper_hosts | List of hostnames for ZooKeeper nodes | &nbsp; |
 | broker_hosts | List of hostnames for Kafka broker nodes | &nbsp; |
@@ -25,18 +25,14 @@ This stack automates the deployment of a complete Kafka cluster on Ubuntu server
 
 | Name | Description | Default |
 |------|-------------|---------|
-| vm_username | Configuration for vm username | ubuntu |
-| publish_to_saas | Boolean to publish values to config0 SaaS UI | null |
-| tf_runtime | Terraform runtime version | tofu:1.9.1 |
+| publish_to_saas | Publish values to the Config0 SaaS UI | null |
 
 ## Dependencies
 
-### Execgroups
+### Hostgroups
 
-- [config0-hub:::ubuntu::docker](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/ubuntu/docker)
-- [config0-hub:::ansible::ubuntu](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/ansible/ubuntu)
-- [config0-hub:::kafka::ubuntu_vendor_setup](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/kafka/ubuntu_vendor_setup)
-- [config0-hub:::kafka::ubuntu_vendor_init_cluster](https://api-app.config0.com/web_api/v1.0/exec/groups/config0-hub/kafka/ubuntu_vendor_init_cluster)
+- `config0-hub:::kafka::ubuntu_vendor_setup`
+- `config0-hub:::kafka::ubuntu_vendor_init_cluster`
 
 ## License
 <pre>

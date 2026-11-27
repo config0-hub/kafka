@@ -1,6 +1,6 @@
 - name: Zookeeper Provisioning
-  hosts: zookeeper
-  remote_user: "{{ os_user }}"
+  hosts: localhost
+  connection: local
   become: true
   gather_facts: yes
   tags:

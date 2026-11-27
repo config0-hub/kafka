@@ -1,6 +1,6 @@
 - name: Kafka Broker Provisioning
-  hosts: kafka_broker
-  remote_user: "{{ os_user }}"
+  hosts: localhost
+  connection: local
   become: true
   gather_facts: yes
   tags:

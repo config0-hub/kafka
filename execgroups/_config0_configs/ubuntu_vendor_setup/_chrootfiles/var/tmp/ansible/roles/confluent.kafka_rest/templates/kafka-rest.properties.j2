@@ -5,7 +5,7 @@
 
 # Kafka Rest Configuration
 listeners={{kafka_rest_http_protocol}}://0.0.0.0:{{kafka_rest_port}}
-host.name={{inventory_hostname}}
+host.name={{kafka_host_ip}}
 {% if kafka_rest_ssl_enabled|bool %}
 ssl.keystore.location={{keystore_path}}
 ssl.keystore.password={{keystore_storepass}}
@@ -19,7 +19,7 @@ ssl.truststore.password={{truststore_storepass}}
 {% endif %}
 
 # Kafka Broker Configuration
-bootstrap.servers={% for host in groups['kafka_broker'] %}{% if loop.index > 1%},{% endif %}{{ host }}:{{kafka_port}}{% endfor %}
+bootstrap.servers={% for ip in kafka_broker_ips %}{% if loop.index > 1%},{% endif %}{{ ip }}:{{kafka_port}}{% endfor %}
 
 client.security.protocol={{kafka_broker_security_protocol}}
 {% if kafka_broker_ssl_enabled|bool %}
@@ -45,9 +45,8 @@ client.sasl.jaas.config=com.sun.security.auth.module.Krb5LoginModule required \
    principal="{{kafka_rest_kerberos_principal}}";
 {% endif %}
 
-{% set schema_registries = groups.get('schema_registry', []) %}
-{% if schema_registries %}
+{% if kafka_schema_registry_ips %}
 # Schema Registry Configuration
-schema.registry.url={% for host in groups['schema_registry'] %}{% if loop.index > 1%},{% endif %}{{ schema_registry_http_protocol }}://{{ host }}:{{ schema_registry_listener_port }}{% endfor %}
+schema.registry.url={% for ip in kafka_schema_registry_ips %}{% if loop.index > 1%},{% endif %}{{ schema_registry_http_protocol }}://{{ ip }}:{{ schema_registry_listener_port }}{% endfor %}
 
 {% endif %}

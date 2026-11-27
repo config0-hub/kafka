@@ -9,7 +9,6 @@
 - name: Install the KSQL Packages
   apt:
     name: "{{item}}={{confluent.package_version}}"
-    force: True
     update_cache: yes
   loop: "{{ksql_packages}}"
   when: ansible_os_family == "Debian"
@@ -22,7 +21,7 @@
 - name: Create Ksql User
   user:
     name: "{{ksql.user}}"
-    comment: "Connect Distributed User"
+    comment: "KSQL User"
     system: yes
     group: "{{ksql.group}}"
 

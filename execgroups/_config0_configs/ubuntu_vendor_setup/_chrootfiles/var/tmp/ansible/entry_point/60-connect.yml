@@ -1,6 +1,6 @@
-- name: Kafta Connect Provisioning
-  hosts: kafka_connect
-  remote_user: "{{ os_user }}"
+- name: Kafka Connect Provisioning
+  hosts: localhost
+  connection: local
   become: true
   gather_facts: yes
   tags:

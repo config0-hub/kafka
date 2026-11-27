@@ -6,7 +6,7 @@
 
 # Schema Registry Configuration
 listeners={{schema_registry_http_protocol}}://0.0.0.0:{{schema_registry_listener_port}}
-host.name={{inventory_hostname}}
+host.name={{kafka_host_ip}}
 inter.instance.protocol={{schema_registry_http_protocol}}
 {% if schema_registry_ssl_enabled|bool %}
 security.protocol=SSL
@@ -22,7 +22,7 @@ ssl.client.auth=false
 {% endif %}
 
 # Kafka Broker Configuration
-kafkastore.bootstrap.servers={% for host in groups['kafka_broker'] %}{% if loop.index > 1%},{% endif %}{{ host }}:{{kafka_port}}{% endfor %}
+kafkastore.bootstrap.servers={% for ip in kafka_broker_ips %}{% if loop.index > 1%},{% endif %}{{ ip }}:{{kafka_port}}{% endfor %}
 
 kafkastore.security.protocol={{kafka_broker_security_protocol}}
 {% if kafka_broker_ssl_enabled|bool %}

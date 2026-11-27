@@ -6,11 +6,55 @@
 - import_tasks: debian_jvm.yml
   when: ansible_distribution == 'Debian'
 
-- name: Add Confluent apt key
-  apt_key:
-    url: "{{confluent_common.repository.debian.key_url}}"
+# The host run's umask 077 would leave a new keyring unreadable for _apt, so
+# the keyring is written under umask 022 and set to 0644, as MongoDB's is.
+# It is written to a temporary file and moved into place only after curl and
+# gpg succeed, so a failed download leaves no keyring for creates: to skip.
+- name: Install Confluent Keyring Dependencies
+  apt:
+    name:
+      - gnupg
+      - curl
     state: present
-- name: Add Confluent apt repo
-  apt_repository:
-    repo: "{{confluent_common.repository.debian.repository}}"
-    state: present
+
+- name: Download Confluent GPG Key and Add to Keyring
+  shell: |
+    set -e
+    umask 022
+    set -o pipefail
+    curl -fsSL {{confluent_common.repository.debian.key_url}} | \
+    gpg --dearmor > /usr/share/keyrings/confluent-{{confluent.repo_version}}.gpg.tmp
+    mv /usr/share/keyrings/confluent-{{confluent.repo_version}}.gpg.tmp /usr/share/keyrings/confluent-{{confluent.repo_version}}.gpg
+  args:
+    creates: /usr/share/keyrings/confluent-{{confluent.repo_version}}.gpg
+    executable: /bin/bash
+
+- name: Ensure Confluent Keyring is World-Readable
+  file:
+    path: /usr/share/keyrings/confluent-{{confluent.repo_version}}.gpg
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add Confluent Repository
+  copy:
+    content: "{{confluent_common.repository.debian.repository}}\n"
+    dest: /etc/apt/sources.list.d/confluent-{{confluent.repo_version}}.list
+    owner: root
+    group: root
+    mode: '0644'
+
+# The component packages depend on confluent-common and confluent-rest-utils
+# with no version, and apt would pick a later 5.3 release that KSQL and Kafka
+# REST cannot start on. The pin holds every confluent-* package at the role's
+# version. apt reads a preferences.d file only with no extension or ".pref".
+- name: Hold Every Confluent Package at the Role Version
+  copy:
+    content: |
+      Package: confluent-*
+      Pin: version {{ confluent.package_version }}
+      Pin-Priority: 1001
+    dest: /etc/apt/preferences.d/confluent
+    owner: root
+    group: root
+    mode: '0644'

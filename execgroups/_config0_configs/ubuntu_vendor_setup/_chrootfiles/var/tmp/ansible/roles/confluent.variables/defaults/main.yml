@@ -34,8 +34,8 @@ confluent_server_enabled: "{{ true if rbac_enabled|bool else false }}"
 # Other options: kerberos, plain
 sasl_protocol: none
 
-ssl_enabled: false
-ssl_mutual_auth_enabled: false
+ssl_enabled: true
+ssl_mutual_auth_enabled: true
 
 kafka_broker_ssl_enabled: "{{ ssl_enabled }}"
 kafka_broker_ssl_mutual_auth_enabled: "{{ ssl_mutual_auth_enabled }}"
@@ -47,20 +47,14 @@ kafka_broker_security_protocol: >-
   else 'SSL' if kafka_broker_ssl_enabled|bool and sasl_protocol == 'none'
   else 'PLAINTEXT' }}
 
-ssl_provided_keystore_and_truststore: false
-ssl_custom_certs: false
-# With self_signed on and ssl_enabled off, self_signed var should not get honored
-self_signed: "{{ false if ssl_provided_keystore_and_truststore|bool or ssl_custom_certs|bool else true }}"
 ssl_self_signed_ca_cert_filename: snakeoil-ca-1.crt
 ssl_self_signed_ca_key_filename: snakeoil-ca-1.key
-ssl_self_signed_ca_password: capassword123
-regenerate_ca: true
 
-truststore_storepass: "{{ ssl_truststore_password if ssl_provided_keystore_and_truststore|bool else 'confluenttruststorepass'}}"
+truststore_storepass: confluenttruststorepass
 truststore_path: /var/ssl/private/client.truststore.jks
 keystore_path: /var/ssl/private/client.keystore.jks
-keystore_storepass: "{{ ssl_keystore_store_password if ssl_provided_keystore_and_truststore|bool else 'confluentkeystorestorepass'}}"
-keystore_keypass: "{{ ssl_keystore_key_password if ssl_provided_keystore_and_truststore|bool else keystore_storepass }}"
+keystore_storepass: confluentkeystorestorepass
+keystore_keypass: "{{ keystore_storepass }}"
 
 certs_updated: false
 

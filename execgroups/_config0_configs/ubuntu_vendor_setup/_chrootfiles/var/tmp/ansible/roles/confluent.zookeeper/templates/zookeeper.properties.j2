@@ -2,6 +2,6 @@
 {% for key, value in zookeeper.properties.items() %}
 {{key}}={{value}}
 {% endfor %}
-{% for host in groups['zookeeper'] %}
-server.{{ hostvars[host]['zookeeper_id'] | default(groups.zookeeper.index(host) + 1)}}={{ host }}:2888:3888
+{% for ip in kafka_zookeeper_ips %}
+server.{{ loop.index }}={{ ip }}:2888:3888
 {% endfor %}

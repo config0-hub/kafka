@@ -19,15 +19,13 @@
 def _vm_create(server_type, count, stack):
     """Create VMs for a specific server type in the Kafka cluster."""
     arguments = stack.get_tagged_vars(tag="create", output="dict")
-    arguments["ip_key"] = "private_ip"
 
-    if stack.ami:
+    if stack.get_attr("ami"):
         arguments["ami"] = stack.ami
-    elif stack.ami_filter and stack.ami_owner:
+    elif stack.get_attr("ami_filter") and stack.get_attr("ami_owner"):
         arguments["ami_filter"] = stack.ami_filter
         arguments["ami_owner"] = stack.ami_owner
 
-    arguments["size"] = stack.instance_type
     hosts = []
 
     # Create ec2 instances
@@ -36,7 +34,6 @@ def _vm_create(server_type, count, stack):
         hosts.append(hostname)
 
         arguments["hostname"] = hostname
-        arguments["bootstrap_for_exec"] = None
 
         human_description = f"Creating hostname {hostname} on ec2"
         inputargs = {
@@ -45,7 +42,7 @@ def _vm_create(server_type, count, stack):
             "human_description": human_description
         }
 
-        stack.ec2_ubuntu.insert(display=True, **inputargs)
+        stack.aws_ec2_server.insert(display=True, **inputargs)
 
     return hosts
 
@@ -65,6 +62,11 @@ class Main(newSchedStack):
         self.parse.add_required(key="num_of_ksql", types="int", default=1)
         self.parse.add_required(key="num_of_control_center", types="int", default=1)
 
+        self.parse.add_required(key="ssh_key_name", types="str", tags="create")
+        self.parse.add_required(key="instance_profile_name", types="str", tags="create")
+        self.parse.add_required(key="managed_tag_key", types="str", tags="create")
+        self.parse.add_required(key="managed_tag_value", types="str", tags="create")
+
         self.parse.add_optional(key="ami", default="null")
         self.parse.add_optional(key="ami_filter",
                                 types="str",
@@ -72,121 +74,57 @@ class Main(newSchedStack):
         self.parse.add_optional(key="ami_owner",
                                 default='099720109477')
 
-        self.parse.add_optional(key="bastion_destroy", default="null")
-
-        # bastion configs
-        self.parse.add_required(key="bastion_sg_id", default="null")
-        self.parse.add_required(key="bastion_subnet_ids", default="null")
-        self.parse.add_optional(key="bastion_ami", default="null")
-
-        self.parse.add_optional(key="bastion_ami_filter",
-                                types = "str",
-                                default="ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*")
-
-        self.parse.add_optional(key="bastion_ami_owner",
-                                default='099720109477')
-
         self.parse.add_optional(key="aws_default_region",
                                types="str",
-                               tags="create,bastion,kafka",
+                               tags="create,kafka",
                                default="us-east-1")
 
         # selects the ssm_ec2_exec_eventbridge install the host orders run
         # through; tagged so it rides into kafka_cluster_on_ubuntu
         self.parse.add_required(key="install_name", types="str", tags="kafka")
 
+        self.parse.add_optional(key="associate_public_ip_address",
+                                types="bool",
+                                tags="create",
+                                default="false")
+
         self.parse.add_required(key="sg_id", tags="create", default="null")
-        self.parse.add_required(key="vpc_id", types="str", tags="create,bastion", default="null")
+        self.parse.add_required(key="vpc_id", types="str", default="null")
         self.parse.add_required(key="subnet_ids", tags="create", default="null")
         self.parse.add_optional(key="instance_type", types="str", tags="create", default="t3.micro")
-        self.parse.add_optional(key="disksize", types="int", tags="create,bastion", default="20")
-        self.parse.add_optional(key="publish_to_saas", default="null")
+        self.parse.add_optional(key="disksize", types="int", tags="create", default="20")
+        self.parse.add_optional(key="publish_to_saas", types="bool", default=True)
         self.parse.add_optional(key="labels", default="null")
         self.parse.add_optional(key="cloud_tags_hash",
                                types="str",
-                               tags="create,bastion",
+                               tags="create",
                                default='null')
 
         # Add substack
-        self.stack.add_substack("config0-hub:::aws::new_ec2_ssh_key")
-        self.stack.add_substack("config0-hub:::ubuntu::ec2_ubuntu")
+        self.stack.add_substack("config0-hub:::aws::aws_ec2_server")
+        self.stack.add_substack("config0-hub:::mongodb::create_mongodb_pem")
         self.stack.add_substack("config0-hub:::kafka::kafka_cluster_on_ubuntu")
-        self.stack.add_substack("config0-hub:::config0_core::delete_resource")
 
         self.stack.init_substacks()
-
-    def run_sshkey(self):
-        self.stack.init_variables()
-        self._set_ssh_key_name()
-
-        arguments = {
-            "key_name": self.stack.ssh_key_name,
-            "clobber": True,
-            "aws_default_region": self.stack.aws_default_region
-        }
-
-        human_description = f"Create and upload ssh key name {self.stack.ssh_key_name}"
-        inputargs = {
-            "arguments": arguments,
-            "automation_phase": "infrastructure",
-            "human_description": human_description
-        }
-
-        return self.stack.new_ec2_ssh_key.insert(display=True, **inputargs)
-
-    def _set_bastion_hostname(self):
-        self.stack.set_variable("bastion_hostname",
-                              f"{self.stack.hostname_base}-config",
-                              tags="kafka")
 
     def _set_hostname_base(self):
         self.stack.set_variable("hostname_base",
                               f"{self.stack.kafka_cluster}-config")
 
-    def _set_ssh_key_name(self):
-        self.stack.set_variable("ssh_key_name",
-                              f"{self.stack.kafka_cluster}-ssh-key",
-                              tags="bastion,create,kafka",
-                              types="str")
-
-    def run_bastion(self):
+    def run_ca(self):
         self.stack.init_variables()
 
-        self._set_hostname_base()
-        self._set_bastion_hostname()
-        self._set_ssh_key_name()
-
-        arguments = self.stack.get_tagged_vars(tag="bastion", output="dict")
-        arguments["size"] = self.stack.instance_type
-        arguments["hostname"] = self.stack.bastion_hostname
-        arguments["subnet_ids"] = self.stack.bastion_subnet_ids
-        arguments["sg_id"] = self.stack.bastion_sg_id
-        arguments["bootstrap_for_exec"] = True
-        arguments["ip_key"] = "public_ip"
-
-        if self.stack.bastion_ami:
-            arguments["ami"] = self.stack.bastion_ami
-        elif self.stack.bastion_ami_filter and self.stack.bastion_ami_owner:
-            arguments["ami_filter"] = self.stack.bastion_ami_filter
-            arguments["ami_owner"] = self.stack.bastion_ami_owner
-
-        self.stack.logger.debug(arguments)
-
-        human_description = f"Creating bastion config hostname {self.stack.bastion_hostname} on ec2"
-        inputargs = {
-            "arguments": arguments,
-            "automation_phase": "infrastructure",
-            "human_description": human_description
-        }
-
-        return self.stack.ec2_ubuntu.insert(display=True, **inputargs)
+        # the _ca suffix keeps this ssl_pem_combined row apart from a MongoDB
+        # cluster of the same name; kafka_cluster_on_ubuntu reads <basename>.pem
+        return self.stack.create_mongodb_pem.insert(
+            display=True,
+            arguments={"basename": f"{self.stack.kafka_cluster}_ca"}
+        )
 
     def run_create(self):
         self.stack.init_variables()
 
         self._set_hostname_base()
-        self._set_bastion_hostname()
-        self._set_ssh_key_name()
 
         self.stack.set_parallel()
 
@@ -237,7 +175,7 @@ class Main(newSchedStack):
         arguments["ksql_hosts"] = ksql_hosts
         arguments["control_center_hosts"] = control_center_hosts
 
-        if self.stack.publish_to_saas:
+        if self.stack.get_attr("publish_to_saas"):
             arguments["publish_to_saas"] = True
 
         human_description = f"Create Kafka Cluster {self.stack.kafka_cluster}"
@@ -249,50 +187,18 @@ class Main(newSchedStack):
 
         return self.stack.kafka_cluster_on_ubuntu.insert(display=True, **inputargs)
 
-    def run_cleanup(self):
-        self.stack.init_variables()
-
-        self._set_hostname_base()
-        self._set_bastion_hostname()
-
-        arguments = {
-            "must_exists": True,
-            "hostname": self.stack.bastion_hostname,
-            "resource_type": "server"
-        }
-
-        if self.stack.bastion_destroy:
-            human_description = f"Destroying bastion config hostname {self.stack.bastion_hostname} on ec2"
-            inputargs = {
-                "arguments": arguments,
-                "automation_phase": "infrastructure",
-                "human_description": human_description
-            }
-
-            return self.stack.delete_resource.insert(display=True, **inputargs)
-
     def run(self):
-        self.add_job("sshkey")
-        self.add_job("bastion")
+        self.add_job("ca")
         self.add_job("create")
-        self.add_job("cleanup")
 
         return self.finalize_jobs()
 
     def schedule(self):
         sched = self.new_schedule()
-        sched.job = "sshkey"
+        sched.job = "ca"
         sched.archive.timeout = 1800
         sched.archive.timewait = 120
-        sched.human_description = "Create and upload ssh-key"
-        sched.on_success = ["bastion"]
-        self.add_schedule()
-
-        sched = self.new_schedule()
-        sched.job = "bastion"
-        sched.archive.timeout = 1800
-        sched.archive.timewait = 120
-        sched.human_description = "Create Bastion Config"
+        sched.human_description = "Create and upload Kafka CA"
         sched.on_success = ["create"]
         self.add_schedule()
 
@@ -301,15 +207,7 @@ class Main(newSchedStack):
         sched.archive.timeout = 7200
         sched.archive.timewait = 120
         sched.human_description = "Create Kafka Cluster"
-        sched.conditions.dependency = ["sshkey"]
-        sched.on_success = ["cleanup"]
-        self.add_schedule()
-
-        sched = self.new_schedule()
-        sched.job = "cleanup"
-        sched.archive.timeout = 1800
-        sched.archive.timewait = 120
-        sched.human_description = "Destroy Bastion Config"
+        sched.conditions.dependency = ["ca"]
         self.add_schedule()
 
         return self.get_schedules()

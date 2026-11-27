@@ -38,7 +38,7 @@ kafka_connect:
     rest.port: "{{kafka_connect_rest_port}}"
     consumer.interceptor.classes: io.confluent.monitoring.clients.interceptor.MonitoringConsumerInterceptor
     producer.interceptor.classes: io.confluent.monitoring.clients.interceptor.MonitoringProducerInterceptor
-    config.storage.replication.factor: 3
+    config.storage.replication.factor: "{{ [3, kafka_broker_ips | length] | min }}"
     config.storage.topic: connect-configs
     group.id: connect-cluster
     internal.key.converter: org.apache.kafka.connect.json.JsonConverter
@@ -46,9 +46,9 @@ kafka_connect:
     internal.value.converter: org.apache.kafka.connect.json.JsonConverter
     internal.value.converter.schemas.enable: false
     offset.flush.interval.ms: 10000
-    offset.storage.replication.factor: 3
+    offset.storage.replication.factor: "{{ [3, kafka_broker_ips | length] | min }}"
     offset.storage.topic: connect-offsets
-    status.storage.replication.factor: 3
+    status.storage.replication.factor: "{{ [3, kafka_broker_ips | length] | min }}"
     status.storage.topic: connect-status
     key.converter: io.confluent.connect.avro.AvroConverter
     value.converter: io.confluent.connect.avro.AvroConverter

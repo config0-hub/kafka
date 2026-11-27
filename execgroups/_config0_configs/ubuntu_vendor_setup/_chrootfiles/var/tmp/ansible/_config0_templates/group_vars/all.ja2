@@ -1,5 +1,0 @@
----
-os_user: ubuntu
-ansible_os_family: Debian
-ssl_enabled: true
-ssl_mutual_auth_enabled: true
