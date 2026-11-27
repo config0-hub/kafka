@@ -1,4 +1,7 @@
 # kafka
+
+> **In progress. Not for public consumption.** Config0 does not support, test or maintain these stacks. Do not use them.
+
 This is an Config0 contribution repository
 
 The Kafka execgroups install Confluent Platform 5.3.1 from Confluent's Debian repository, with
